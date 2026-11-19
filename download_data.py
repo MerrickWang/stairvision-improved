@@ -1,6 +1,8 @@
 from pathlib import Path
 import requests,zipfile
-p=Path('/root/stairlab/data'); target=p/'stairs.zip'
+p = Path(__file__).resolve().parent / 'data'
+p.mkdir(parents=True, exist_ok=True)
+target = p / 'stairs.zip'
 r=requests.get('https://data.mendeley.com/public-api/zip/6kffmjt7g2/download/1',stream=True,timeout=(20,120)); r.raise_for_status()
 print('Downloading',r.headers.get('Content-Length'),flush=True)
 n=0
