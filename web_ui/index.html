@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StairLab · 楼梯感知</title><link rel="stylesheet" href="/style.css"><script defer src="/app.js"></script>
+</head>
+<body>
+  <header class="top"><div class="brand"><span class="mark" aria-hidden="true">▟</span> StairLab</div><span id="health" class="health" role="status">正在连接 GPU</span></header>
+  <main>
+    <div class="intro"><h1>楼梯感知</h1><p>通过一张图识别阶缘、计算可见阶数并查看相对深度。</p></div>
+    <div class="layout">
+      <section class="viewer" aria-label="分析图像">
+        <div class="toolbar"><div class="tabs" role="group" aria-label="显示模式"><button data-mode="rgb" aria-pressed="false">原图</button><button data-mode="edges" aria-pressed="true">阶缘识别</button><button data-mode="heat" aria-pressed="false">相对深度</button></div><button class="text-button" id="save-image" disabled>保存图像</button></div>
+        <div class="stage" id="stage"><p id="placeholder">请选择图片开始分析</p><canvas id="canvas" hidden aria-label="推理图像"></canvas></div>
+        <div class="caption"><span id="caption">等待输入</span><span id="coordinate"></span></div>
+      </section>
+      <aside>
+        <section class="card upload"><h2>图像输入</h2><label class="drop" id="drop" for="file"><span class="upload-icon" aria-hidden="true">＋</span><strong>选择或拖入图片</strong><span>JPEG、PNG、WebP · 最大 12 MB</span></label><input id="file" class="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp"><div class="examples" aria-label="示例图像"><button data-example="front">正面</button><button data-example="angled">斜视</button><button data-example="dark">暗光</button></div></section>
+        <section class="card results"><h2>分析结果</h2><div class="number"><strong id="count">—</strong><span>可见台阶</span></div><p id="status" role="status" aria-live="polite">等待分析</p><button class="download" id="save-depth" disabled>下载深度数组 .npy</button></section>
+      </aside>
+    </div>
+  </main>
+</body>
+</html>

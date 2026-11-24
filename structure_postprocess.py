@@ -17,7 +17,8 @@ def line_length(line):
     return math.hypot(first[0] - second[0], first[1] - second[1])
 
 
-def clean(record, confidence=0.25, minimum_length_ratio=0.12, merge_y_ratio=0.035):
+def clean(record, confidence=0.25, minimum_length_ratio=0.12, merge_y_ratio=0.035,
+          *, short_edge_minimum_length_ratio=None):
     candidates = []
     for line in record.get("lines", []):
         if float(line.get("confidence", 0)) < confidence:
@@ -26,7 +27,10 @@ def clean(record, confidence=0.25, minimum_length_ratio=0.12, merge_y_ratio=0.03
             continue
         first, second = line["endpoints"][:2]
         diagonal = math.hypot(max(first[0], second[0]), max(first[1], second[1]), 1.0)
-        if line_length(line) < minimum_length_ratio * diagonal:
+        ratio = minimum_length_ratio
+        if short_edge_minimum_length_ratio is not None and line.get('short_edge_recovery'):
+            ratio = short_edge_minimum_length_ratio
+        if line_length(line) < ratio * diagonal:
             continue
         candidates.append(line)
 
