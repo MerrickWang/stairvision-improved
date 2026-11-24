@@ -2,6 +2,20 @@
 
 输入单张 RGB 图像，输出台阶凸边、可见阶数和逐像素相对深度。GPU 交互页面支持上传图片、切换原图与结果、点选读取相对深度，以及下载深度数组。
 
+## 代码结构
+
+| 目录 | 内容 |
+|---|---|
+| `stairlab/recognition/` | 阶缘、几何变换、分组计数和识别流水线 |
+| `stairlab/depth/` | 相对深度推理 |
+| `stairlab/web/` | GPU HTTP 服务与交互页面 |
+| `stairlab/training/` | 训练入口和外部模型适配 |
+| `stairlab/evaluation/` | 模型评估、计数和版本对照 |
+| `stairlab/experiments/` | 历史消融和难例诊断 |
+| `tests/`、`docs/`、`results/` | 测试、文档和评估摘要 |
+
+本机运行配置放在忽略目录 `.local/`。部署可用 `bash scripts/start_web.sh`，通过 `STAIRLAB_LOCAL`、`STAIRLAB_PYTHON` 和 `STAIRLAB_PORT` 覆盖默认值。历史评估协议中的源码哈希针对旧目录，继续复现历史记录时使用原始快照。
+
 ## 方法与结果
 
 - **阶缘与计数**采用 YOLO 凸边短片段预测、方向和覆盖约束拼接，再用踏面与立面辅助去重、物理台阶归组和有条件的漏阶补检。短片段设计参考 StairNet-DepthOut，相邻阶缘拆分和位置校正用于处理密集样本。
@@ -38,7 +52,7 @@ git -C third_party/StairNet-DepthOut checkout 29457b1
 从仓库根目录运行。将 `weights/` 中的文件指向实际检查点，文件来源与校验值见 [权重清单](docs/weights.md)。`--examples` 使用官方测试图目录，提供正面、斜视和暗光示例。
 
 ```bash
-python web_app.py \
+python -m stairlab.web.web_app \
   --yolo weights/yolo_fragments.pt \
   --depthout third_party/StairNet-DepthOut \
   --depthout-weights weights/depthout.pt \
@@ -55,22 +69,22 @@ python web_app.py \
 用现有数据生成短线缓存和训练 DepthOut。`PYTHONPATH` 用于定位外部网络定义。
 
 ```bash
-python training/depthout/depthout_data.py --raw "$DATASET" --cache data/prepared_depthout
-PYTHONPATH="$PWD/third_party/StairNet-DepthOut" python training/depthout/train_remote.py \
+python -m stairlab.training.depthout.depthout_data --raw "$DATASET" --cache data/prepared_depthout
+PYTHONPATH="$PWD/third_party/StairNet-DepthOut" python -m stairlab.training.depthout.train_remote \
   --cache data/prepared_depthout --output runs/depthout
 
-python train_yolo_fragments.py --label-cache data/prepared_depthout \
+python -m stairlab.training.train_yolo_fragments --label-cache data/prepared_depthout \
   --backbone "$POSE_WEIGHTS" --output runs/yolo_fragments --epochs 24 --surface-aux
-python train_dense_stair_edges.py --dataset "$DATASET" --output runs/dense_edges --epochs 4
+python -m stairlab.training.train_dense_stair_edges --dataset "$DATASET" --output runs/dense_edges --epochs 4
 ```
 
-`POSE_WEIGHTS` 为楼梯姿态检测初始化权重，可用原有的 `prepare_data.py` 和 `train_yolo.py` 训练。短片段评估入口为 `evaluate_yolo_fragments.py`，阶数验证入口为 `evaluate_physical_counts.py`，历史配对评估入口为 `evaluate_version_comparison.py`。
+`POSE_WEIGHTS` 为楼梯姿态检测初始化权重，可用原有的 旧版源码中的 `prepare_data.py` 和 `train_yolo.py` 训练。历史训练入口保留在提交 `4e44bc1`。短片段评估入口为 `evaluate_yolo_fragments.py`，阶数验证入口为 `evaluate_physical_counts.py`，历史配对评估入口为 `evaluate_version_comparison.py`。
 
 ```bash
-python train_relative_depth_v40.py --dataset "$DATASET" --near-is low \
+python -m stairlab.training.train_relative_depth_v40 --dataset "$DATASET" --near-is low \
   --size 392 --batch 8 --epochs 2 --output runs/depth/4.0
-python evaluate_relative_depth_v40.py --test "$DATASET/test" --run runs/depth/4.0
-python predict_relative_depth.py --source path/to/image.jpg \
+python -m stairlab.evaluation.evaluate_relative_depth_v40 --test "$DATASET/test" --run runs/depth/4.0
+python -m stairlab.depth.predict_relative_depth --source path/to/image.jpg \
   --checkpoint runs/depth/4.0/decoder_only.pt --output runs/relative_depth
 ```
 
